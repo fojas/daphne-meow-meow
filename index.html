@@ -52,13 +52,16 @@
         }
         h1 {
             animation: colorRotate 2s linear infinite;
-            }
-            @keyframes colorRotate {
-                0% { color: #00ccff; }
-                50% { color: #800080; }
-                100% { color: #00ccff; }
-
-              }
+            position: relative;
+            z-index: 1000;
+            text-align: center;
+            width: 100%;
+        }
+        @keyframes colorRotate {
+            0% { color: #00ccff; }
+            50% { color: #800080; }
+            100% { color: #00ccff; }
+        }
         .wave-letter {
             display: inline-block;
             animation: wave 1.0s infinite ease-in-out;
@@ -77,17 +80,13 @@
         /* Update the taco image styles */
         .taco-image {
             z-index: -1;
-            position: relative;
+            position: fixed;
             width: 800px;
-            max-width: 90vw; /* Prevent image from overflowing on mobile */
-            height: auto; /* Maintain aspect ratio */
-        }
-
-        /* Media query for mobile devices */
-        @media screen and (max-width: 768px) {
-            .taco-image {
-                width: 300px; /* Smaller fixed width for mobile */
-            }
+            max-width: 90vw;
+            height: auto;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         @keyframes fall {
@@ -146,7 +145,7 @@
 
         .score-container {
             position: fixed;
-            top: 20px;
+            top: 115px;
             right: 20px;
             display: flex;
             flex-direction: column;
@@ -165,11 +164,16 @@
         }
 
         .difficulty-selector {
+            position: fixed;
+            top: 115px;
+            left: 20px;
             background-color: rgba(255, 255, 255, 0.8);
-            padding: 5px 10px;
+            padding: 5px;
             border-radius: 10px;
             display: flex;
+            flex-direction: column;
             gap: 5px;
+            z-index: 1000;
         }
 
         .difficulty-btn {
@@ -178,6 +182,8 @@
             border: none;
             border-radius: 5px;
             background-color: #ddd;
+            width: 80px;
+            font-size: 16px;
         }
 
         .difficulty-btn.active {
@@ -226,16 +232,35 @@
             left: 50%;
             transform: translate(-50%, -50%);
         }
+
+        /* Update style for pause button */
+        .pause-btn {
+            padding: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #ddd;
+            width: 40px;
+            margin-top: 5px;
+            font-size: 20px;
+            display: none; /* Hide initially */
+        }
+
+        /* Add paused state for animations */
+        .paused {
+            animation-play-state: paused !important;
+        }
     </style>
 </head>
 <body>
     <div class="score-container">
         <div class="score">Score: <span id="scoreValue">0</span></div>
-        <div class="difficulty-selector">
-            <button class="difficulty-btn active" onclick="setDifficulty(0.25)">Easy</button>
-            <button class="difficulty-btn" onclick="setDifficulty(0.5)">Medium</button>
-            <button class="difficulty-btn" onclick="setDifficulty(1)">Hard</button>
-        </div>
+        <button class="pause-btn" onclick="togglePause()">⏸️</button>
+    </div>
+    <div class="difficulty-selector">
+        <button class="difficulty-btn active" onclick="setDifficulty(0.25)">🌶️</button>
+        <button class="difficulty-btn" onclick="setDifficulty(0.5)">🌶️🌶️</button>
+        <button class="difficulty-btn" onclick="setDifficulty(1)">🌶️🌶️🌶️</button>
     </div>
     <div id="meowContainer"></div>
     <div class="start-button-container">
@@ -246,6 +271,7 @@
         let heartInterval;
         let score = 0;
         let currentDifficulty = 0.25; // Default to easy
+        let isPaused = false;
 
         function updateScore(isIncrease = true, amount = 1) {
             const scoreElement = document.getElementById('scoreValue');
@@ -272,9 +298,9 @@
             buttons.forEach(btn => {
                 btn.classList.remove('active');
                 if (
-                    (level === 0.25 && btn.textContent === 'Easy') ||
-                    (level === 0.5 && btn.textContent === 'Medium') ||
-                    (level === 1 && btn.textContent === 'Hard')
+                    (level === 0.25 && btn.textContent === '🌶️') ||
+                    (level === 0.5 && btn.textContent === '🌶️🌶️') ||
+                    (level === 1 && btn.textContent === '🌶️🌶️🌶️')
                 ) {
                     btn.classList.add('active');
                 }
@@ -316,6 +342,10 @@
             // Hide only the start button
             const startButton = document.querySelector('button[onclick="addMeow()"]');
             startButton.style.display = 'none';
+
+            // Show the pause button
+            const pauseButton = document.querySelector('.pause-btn');
+            pauseButton.style.display = 'block';
 
             const container = document.getElementById('meowContainer');
             const text = 'MEOW! MEOW!';
@@ -601,6 +631,62 @@
             setTimeout(() => {
                 animateCat();
             }, randomDelay);
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseBtn = document.querySelector('.pause-btn');
+            pauseBtn.textContent = isPaused ? '▶️' : '⏸️';
+
+            // Pause/resume and hide/show all falling emojis
+            const emojis = document.querySelectorAll('.heart');
+            emojis.forEach(emoji => {
+                emoji.classList.toggle('paused');
+                emoji.style.visibility = isPaused ? 'hidden' : 'visible';
+            });
+
+            // Pause/resume and hide/show all cats
+            const cats = document.querySelectorAll('.walking-cat');
+            cats.forEach(cat => {
+                const animation = cat.getAnimations()[0];
+                if (animation) {
+                    if (isPaused) {
+                        animation.pause();
+                        cat.style.visibility = 'hidden';
+                    } else {
+                        animation.play();
+                        cat.style.visibility = 'visible';
+                    }
+                }
+            });
+
+            // Pause/resume emoji generation
+            if (isPaused) {
+                clearInterval(heartInterval);
+            } else {
+                // Restart emoji generation with current settings
+                let emojisPerBatch = 3;
+                if (currentDifficulty === 0.5) {
+                    emojisPerBatch = 5;
+                } else if (currentDifficulty === 0.25) {
+                    emojisPerBatch = 7;
+                }
+
+                heartInterval = setInterval(() => {
+                    for (let i = 0; i < emojisPerBatch; i++) {
+                        const bombChance = Math.random();
+                        const bombThreshold = currentDifficulty === 1 ? 0.3 :
+                                            currentDifficulty === 0.5 ? 0.2 :
+                                            0.1;
+
+                        if (bombChance < bombThreshold) {
+                            createBombDrop();
+                        } else {
+                            createRainDrops();
+                        }
+                    }
+                }, 100 / currentDifficulty);
+            }
         }
     </script>
 </body>
