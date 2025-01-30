@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Meow Button</title>
+    <style>
+        html {
+            width: 100vw;
+            overflow-x: hidden;
+            position: fixed;
+        }
+
+        html, body {
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            width: 100vw;
+            min-width: 100vw;
+            max-width: 100vw;
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            margin-top: 50px;
+            overflow-x: hidden;
+            background-color: cyan;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        button {
+            padding: 20px 40px;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 10px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+            transform: scale(1.1);
+        }
+        h1 {
+            animation: colorRotate 2s linear infinite;
+            }
+            @keyframes colorRotate {
+                0% { color: #00ccff; }
+                50% { color: #800080; }
+                100% { color: #00ccff; }
+
+              }
+        .wave-letter {
+            display: inline-block;
+            animation: wave 1.0s infinite ease-in-out;
+        }
+        @keyframes wave {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        .heart {
+            position: fixed;
+            top: -20px;
+            color: red;
+            animation: fall linear forwards;
+        }
+
+        /* Update the taco image styles */
+        .taco-image {
+            z-index: -1;
+            position: relative;
+            width: 800px;
+            max-width: 90vw; /* Prevent image from overflowing on mobile */
+            height: auto; /* Maintain aspect ratio */
+        }
+
+        /* Media query for mobile devices */
+        @media screen and (max-width: 768px) {
+            .taco-image {
+                width: 300px; /* Smaller fixed width for mobile */
+            }
+        }
+
+        @keyframes fall {
+            from {
+                transform: translateY(0) translateX(0);
+            }
+            to {
+                transform: translateY(105vh) translateX(var(--drift-x));
+            }
+        }
+
+        @keyframes walkAcross {
+            0% {
+                transform: translateX(-200px) scaleX(1);
+            }
+            49.9% {
+                transform: translateX(100vw) scaleX(1);
+            }
+            50% {
+                transform: translateX(100vw) scaleX(-1);
+            }
+            99.9% {
+                transform: translateX(-200px) scaleX(-1);
+            }
+            100% {
+                transform: translateX(-200px) scaleX(1);
+            }
+        }
+
+        .walking-cat {
+            position: fixed;
+            left: 0;
+            width: 200px;
+            z-index: 100;
+            display: none; /* Hide initially */
+            /* Remove the animation from CSS since we'll add it via JavaScript */
+        }
+
+        @keyframes walkRight {
+            from {
+                transform: translateX(-200px) scaleX(1);
+            }
+            to {
+                transform: translateX(100vw) scaleX(1);
+            }
+        }
+
+        @keyframes walkLeft {
+            from {
+                transform: translateX(100vw) scaleX(-1);
+            }
+            to {
+                transform: translateX(-200px) scaleX(-1);
+            }
+        }
+
+        .score-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+
+        .difficulty-selector {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 10px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .difficulty-btn {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #ddd;
+        }
+
+        .difficulty-btn.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        @keyframes scoreUp {
+            0%, 100% { color: black; }
+            50% { color: #00ff00; }
+        }
+
+        @keyframes scoreDown {
+            0%, 100% { color: black; }
+            50% { color: #ff0000; }
+        }
+
+        .score-up {
+            animation: scoreUp 0.5s ease-in-out;
+        }
+
+        .score-down {
+            animation: scoreDown 0.5s ease-in-out;
+        }
+
+        /* Add new styles */
+        @keyframes explode {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        .exploding {
+            animation: explode 0.3s ease-out forwards;
+        }
+
+        /* Add styles for the start button container */
+        .start-button-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <div class="score-container">
+        <div class="score">Score: <span id="scoreValue">0</span></div>
+        <div class="difficulty-selector">
+            <button class="difficulty-btn active" onclick="setDifficulty(0.25)">Easy</button>
+            <button class="difficulty-btn" onclick="setDifficulty(0.5)">Medium</button>
+            <button class="difficulty-btn" onclick="setDifficulty(1)">Hard</button>
+        </div>
+    </div>
+    <div id="meowContainer"></div>
+    <div class="start-button-container">
+        <button onclick="addMeow()">Click for Meow!</button>
+    </div>
+
+    <script>
+        let heartInterval;
+        let score = 0;
+        let currentDifficulty = 0.25; // Default to easy
+
+        function updateScore(isIncrease = true, amount = 1) {
+            const scoreElement = document.getElementById('scoreValue');
+            if (isIncrease) {
+                score += amount;
+                scoreElement.className = 'score-up';
+            } else {
+                score -= amount;
+                scoreElement.className = 'score-down';
+            }
+            scoreElement.textContent = score;
+
+            // Remove the animation class after it completes
+            setTimeout(() => {
+                scoreElement.className = '';
+            }, 500);
+        }
+
+        function setDifficulty(level) {
+            currentDifficulty = level;
+
+            // Update button styles
+            const buttons = document.querySelectorAll('.difficulty-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                if (
+                    (level === 0.25 && btn.textContent === 'Easy') ||
+                    (level === 0.5 && btn.textContent === 'Medium') ||
+                    (level === 1 && btn.textContent === 'Hard')
+                ) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // If game is running, reset cats
+            if (heartInterval) {
+                // Remove all existing cats
+                const cats = document.querySelectorAll('.walking-cat');
+                cats.forEach(cat => {
+                    cat.remove();
+                });
+
+                // Add new cats based on new difficulty
+                const originalCat = document.createElement('img');
+                originalCat.className = 'walking-cat';
+                originalCat.src = 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcmpxZHVweGk2NHB1aTd0OW1jczRhYTlscXV6NjRtOW0xdHdwand5ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/h2UWlUDRM7cU0JCna3/giphy.gif';
+                originalCat.alt = 'Cat riding robot cat';
+                document.body.appendChild(originalCat);
+
+                let numCats = 1; // Easy mode
+                if (currentDifficulty === 0.5) {
+                    numCats = 3; // Medium mode
+                } else if (currentDifficulty === 1) {
+                    numCats = 8; // Hard mode
+                }
+
+                // Create and start cats
+                for (let i = 0; i < numCats; i++) {
+                    const newCat = originalCat.cloneNode(true);
+                    document.body.appendChild(newCat);
+                    newCat.style.display = 'block';
+                    startCatWalk(newCat);
+                }
+            }
+        }
+
+        function addMeow() {
+            // Hide only the start button
+            const startButton = document.querySelector('button[onclick="addMeow()"]');
+            startButton.style.display = 'none';
+
+            const container = document.getElementById('meowContainer');
+            const text = 'MEOW! MEOW!';
+            const letters = text.split('').map((letter, index) => {
+              if (letter === ' ') {
+                    return '&nbsp;&nbsp;';
+                }
+                return `<span class="wave-letter" style="animation-delay: ${index * 0.1}s">${letter}</span>`;
+            }).join('');
+            container.innerHTML = `<h1>${letters}</h1>
+                <img class="taco-image" src="https://thumbs.dreamstime.com/b/taco-character-vector-hand-drawn-cartoon-kawaii-illustration-icon-isolated-blue-background-tacos-concept-happy-332135050.jpg" alt="taco" width="800">
+                `
+
+            // Create and start the cats
+            const originalCat = document.createElement('img');
+            originalCat.className = 'walking-cat';
+            originalCat.src = 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcmpxZHVweGk2NHB1aTd0OW1jczRhYTlscXV6NjRtOW0xdHdwand5ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/h2UWlUDRM7cU0JCna3/giphy.gif';
+            originalCat.alt = 'Cat riding robot cat';
+
+            let numCats = 1; // Easy mode
+            if (currentDifficulty === 0.5) {
+                numCats = 3; // Medium mode
+            } else if (currentDifficulty === 1) {
+                numCats = 8; // Hard mode
+            }
+
+            // Create and start cats
+            for (let i = 0; i < numCats; i++) {
+                const newCat = originalCat.cloneNode(true);
+                document.body.appendChild(newCat);
+                newCat.style.display = 'block';
+                startCatWalk(newCat);
+            }
+
+            // Start the heart animation only if it hasn't been started yet
+            if (!heartInterval) {
+                // Determine number of emojis per batch based on difficulty
+                let emojisPerBatch = 3; // Hard mode (base amount)
+                if (currentDifficulty === 0.5) {
+                    emojisPerBatch = 5; // Medium mode (50% more than hard)
+                } else if (currentDifficulty === 0.25) {
+                    emojisPerBatch = 7; // Easy mode (50% more than medium)
+                }
+
+                heartInterval = setInterval(() => {
+                    for (let i = 0; i < emojisPerBatch; i++) {
+                        // Determine bomb chance based on difficulty
+                        const bombChance = Math.random();
+                        const bombThreshold = currentDifficulty === 1 ? 0.3 :  // 30% for hard
+                                            currentDifficulty === 0.5 ? 0.2 :  // 20% for medium
+                                            0.1;                               // 10% for easy
+
+                        if (bombChance < bombThreshold) {
+                            createBombDrop();
+                        } else {
+                            createRainDrops();
+                        }
+                    }
+                }, 100 / currentDifficulty);
+            }
+        }
+
+        function createRainDrops() {
+            const element = document.createElement('div');
+            element.className = 'heart';
+
+            // Make elements clickable
+            element.style.cursor = 'pointer';
+            element.addEventListener('click', (e) => {
+                // Store the original position
+                const rect = e.target.getBoundingClientRect();
+                const explosion = document.createElement('div');
+                explosion.innerHTML = '💥';
+                explosion.style.position = 'fixed';
+                explosion.style.left = rect.left + 'px';
+                explosion.style.top = rect.top + 'px';
+                explosion.style.fontSize = e.target.style.fontSize;
+                explosion.style.zIndex = '9999';
+                explosion.className = 'exploding';
+
+                document.body.appendChild(explosion);
+                updateScore(true);
+                e.target.remove();
+
+                // Remove explosion element after animation
+                setTimeout(() => {
+                    explosion.remove();
+                }, 300);
+            });
+
+            // Random number between 0 and 1
+            const random = Math.random();
+
+            let selectedEmoji;
+            if (random < 0.2) {
+                // Hearts (20% chance)
+                const hearts = ['❤️', '💙', '🧡', '💛', '💚', '💜'];
+                selectedEmoji = hearts[Math.floor(Math.random() * hearts.length)];
+            } else if (random < 0.4) {
+                // Taco (20% chance)
+                selectedEmoji = '🌮';
+            } else if (random < 0.6) {
+                // Boba (20% chance)
+                selectedEmoji = '🧋';
+            } else if (random < 0.8) {
+                // Snow (20% chance)
+                selectedEmoji = '❄️';
+            } else {
+                // Rain (20% chance)
+                selectedEmoji = '💧'
+            }
+            element.innerHTML = selectedEmoji;
+
+            // Random base size between 16px and 48px for hard mode
+            const baseSize = Math.random() * 32 + 16;
+
+            // Scale size based on difficulty
+            let sizeMultiplier = 1; // Hard mode (base size)
+            if (currentDifficulty === 0.5) {
+                sizeMultiplier = 1.25; // Medium mode (25% larger)
+            } else if (currentDifficulty === 0.25) {
+                sizeMultiplier = 1.5625; // Easy mode (25% larger than medium, or 56.25% larger than hard)
+            }
+
+            const adjustedSize = baseSize * sizeMultiplier;
+            element.style.fontSize = `${adjustedSize}px`;
+
+            // Random position
+            element.style.left = Math.random() * 100 + 'vw';
+
+            // Random horizontal drift between -200px and 200px
+            const drift = Math.random() * 400 - 200;
+            element.style.setProperty('--drift-x', `${drift}px`);
+
+            // Random base speed between 1-5 seconds, then adjusted by difficulty
+            const baseDuration = Math.random() * 4 + 1;
+            const adjustedDuration = baseDuration / currentDifficulty; // Slower at lower difficulties
+            element.style.animationDuration = `${adjustedDuration}s`;
+
+            // Change z-index values to be always positive but different layers
+            element.style.zIndex = Math.random() < 0.5 ? '0' : '2';
+
+            document.body.appendChild(element);
+
+            element.addEventListener('animationend', () => {
+                element.remove();
+            });
+        }
+
+        function createBombDrop() {
+            const element = document.createElement('div');
+            element.className = 'heart';
+
+            // Make elements clickable
+            element.style.cursor = 'pointer';
+            element.addEventListener('click', (e) => {
+                // Store the original position
+                const rect = e.target.getBoundingClientRect();
+                const explosion = document.createElement('div');
+                explosion.innerHTML = '💥';
+                explosion.style.position = 'fixed';
+                explosion.style.left = (rect.left - 100) + 'px';  // Shift left by 100px
+                explosion.style.top = (rect.top - 100) + 'px';    // Shift up by 100px
+                explosion.style.fontSize = '284px';
+                explosion.style.zIndex = '9999';
+                explosion.className = 'exploding';
+
+                document.body.appendChild(explosion);
+                updateScore(false, 1);  // Lose 1 point
+                e.target.remove();
+
+                setTimeout(() => {
+                    explosion.remove();
+                }, 300);
+            });
+
+            element.innerHTML = '💣';
+
+            // Use inverse size scaling for bombs
+            const baseSize = Math.random() * 32 + 16;
+            let sizeMultiplier = 1.5625; // Hard mode gets largest size (what was easy)
+            if (currentDifficulty === 0.5) {
+                sizeMultiplier = 1.25; // Medium stays the same
+            } else if (currentDifficulty === 0.25) {
+                sizeMultiplier = 1; // Easy mode gets smallest size (what was hard)
+            }
+            const adjustedSize = baseSize * sizeMultiplier;
+            element.style.fontSize = `${adjustedSize}px`;
+
+            // Random position and movement
+            element.style.left = Math.random() * 100 + 'vw';
+            const drift = Math.random() * 400 - 200;
+            element.style.setProperty('--drift-x', `${drift}px`);
+            const baseDuration = Math.random() * 4 + 1;
+            const adjustedDuration = baseDuration / currentDifficulty;
+            element.style.animationDuration = `${adjustedDuration}s`;
+            element.style.zIndex = Math.random() < 0.5 ? '0' : '2';
+
+            document.body.appendChild(element);
+            element.addEventListener('animationend', () => {
+                element.remove();
+            });
+        }
+
+        function startCatWalk(cat) {
+            // Randomize initial direction
+            let isWalkingRight = Math.random() < 0.5;
+
+            // Set initial position immediately
+            cat.style.left = isWalkingRight ? '-200px' : 'calc(100vw + 200px)';
+            cat.style.transform = isWalkingRight ? 'scaleX(1)' : 'scaleX(-1)';
+
+            // Set initial height
+            const randomY = Math.random() * (window.innerHeight - 300);
+            cat.style.top = randomY + 'px';
+
+            // Add click handler to the cat
+            cat.style.cursor = 'pointer';
+            cat.addEventListener('click', (e) => {
+                // Create explosion at cat's position
+                const rect = e.target.getBoundingClientRect();
+                const explosion = document.createElement('div');
+                explosion.innerHTML = '💥';
+                explosion.style.position = 'fixed';
+                explosion.style.left = (rect.left - 100) + 'px';  // Shift left by 100px
+                explosion.style.top = (rect.top - 100) + 'px';    // Shift up by 100px
+                explosion.style.fontSize = '284px';
+                explosion.style.zIndex = '9999';
+                explosion.className = 'exploding';
+                document.body.appendChild(explosion);
+
+                // Update score and remove cat
+                updateScore(false, 5);  // Lose 5 points
+                cat.remove();
+
+                // Remove explosion after animation
+                setTimeout(() => {
+                    explosion.remove();
+                }, 300);
+
+                // Create and start a new cat
+                const newCat = document.createElement('img');
+                newCat.className = 'walking-cat';
+                newCat.src = 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcmpxZHVweGk2NHB1aTd0OW1jczRhYTlscXV6NjRtOW0xdHdwand5ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/h2UWlUDRM7cU0JCna3/giphy.gif';
+                newCat.alt = 'Cat riding robot cat';
+                document.body.appendChild(newCat);
+                newCat.style.display = 'block';
+                startCatWalk(newCat);
+            });
+
+            function setRandomHeight() {
+                const randomY = Math.random() * (window.innerHeight - 300);
+                cat.style.top = randomY + 'px';
+            }
+
+            function animateCat() {
+                setRandomHeight();
+
+                const animation = cat.animate(
+                    isWalkingRight ?
+                        [
+                            {transform: 'translateX(0) scaleX(1)'},
+                            {transform: 'translateX(calc(100vw + 400px)) scaleX(1)'}
+                        ] :
+                        [
+                            {transform: 'translateX(0) scaleX(-1)'},
+                            {transform: 'translateX(calc(-100vw - 400px)) scaleX(-1)'}
+                        ],
+                    {
+                        duration: 10000, // 10 seconds
+                        easing: 'linear'
+                    }
+                );
+
+                animation.onfinish = () => {
+                    isWalkingRight = !isWalkingRight;
+                    animateCat();
+                };
+            }
+
+            // Add random delay before starting animation
+            const randomDelay = Math.random() * 5000; // Random delay up to 5 seconds
+            setTimeout(() => {
+                animateCat();
+            }, randomDelay);
+        }
+    </script>
+</body>
+</html>
